@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amazon Cases Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f6fa;
+      color: #1a1d26;
+      padding: 32px 24px;
+    }
+
+    header { margin-bottom: 28px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    h1 { font-size: 1.4rem; color: #1a1d26; margin-bottom: 2px; }
+    .meta { font-size: 0.78rem; color: #999; }
+
+    h2 {
+      font-size: 0.72rem;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 28px 0 10px;
+    }
+
+    .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    .btn-copy {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      background: #fff;
+      border: 1px solid #dde0ea;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: #444;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-copy:hover { background: #f0f1f5; border-color: #bbbeca; }
+    .btn-copy.copied { background: #e6f9ee; border-color: #8ecfa8; color: #156930; }
+
+    /* ── Stat cards ──────────────────────────────────────────────────────── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 14px;
+      margin-bottom: 4px;
+    }
+    .stat-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .stat-label { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.07em; color: #aaa; margin-bottom: 4px; }
+    .stat-value { font-size: 1.9rem; font-weight: 700; line-height: 1; }
+    .stat-sub   { font-size: 0.7rem; color: #bbb; margin-top: 3px; }
+    .stat-open .stat-value   { color: #cc3322; }
+    .stat-closed .stat-value { color: #156930; }
+    .stat-days .stat-value   { color: #1a1d26; }
+    .stat-msgs .stat-value   { color: #2277cc; }
+
+    /* ── Charts ──────────────────────────────────────────────────────────── */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 14px;
+    }
+    .chart-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 18px 20px 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .chart-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 14px;
+    }
+    .chart-wrap { position: relative; height: 220px; }
+
+    /* ── Tables ──────────────────────────────────────────────────────────── */
+    .table-wrap { width: 100%; overflow-x: auto; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; background: #fff; min-width: 1300px; }
+    th {
+      background: #f0f1f5;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.65rem;
+      padding: 9px 10px;
+      text-align: left;
+      border-bottom: 1px solid #e4e6ef;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+    }
+    td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #f0f1f5;
+      vertical-align: top;
+      line-height: 1.4;
+    }
+    tbody tr:hover td { background: #f8f9fd; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .col-close    { width: 48px; text-align: center; }
+    input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #2277cc; margin-top: 2px; }
+
+    .asin-code { font-family: monospace; font-size: 0.75rem; color: #555; display: block; }
+    .asin-name { font-size: 0.7rem; color: #999; display: block; margin-top: 1px; }
+
+    .owner-select {
+      width: 100%;
+      font-size: 0.78rem;
+      font-family: inherit;
+      padding: 3px 5px;
+      border: 1px solid #e0e2ea;
+      border-radius: 4px;
+      background: #fff;
+      color: #333;
+      cursor: pointer;
+    }
+    .owner-select:focus { outline: none; border-color: #2277cc; }
+    .owner-select.unassigned { color: #aaa; font-style: italic; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+    }
+    .mkt-fr { background: #ddeeff; color: #1a66bb; }
+    .mkt-it { background: #fdecea; color: #bb2211; }
+    .mkt-uk { background: #e6f9ee; color: #156930; }
+    .mkt-de { background: #fef9e0; color: #996600; }
+    .mkt-es { background: #fff0e0; color: #cc5500; }
+    .mkt-us { background: #f0e8ff; color: #6622bb; }
+
+    .bucket {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .bucket-us   { background: #fdecea; color: #bb2211; }
+    .bucket-amz  { background: #e8f0fe; color: #1a55bb; }
+    .bucket-ip   { background: #f0f1f5; color: #666; }
+    .bucket-esc  { background: #fff3e0; color: #bb6600; }
+    .bucket-res  { background: #e6f9ee; color: #156930; }
+
+    .days-urgent { color: #bb2211; font-weight: 700; }
+    .days-warn   { color: #996600; font-weight: 600; }
+    .days-ok     { color: #888; }
+
+    .due-urgent { color: #bb2211; font-weight: 700; }
+    .due-soon   { color: #996600; font-weight: 600; }
+    .due-blank  { color: #ccc; }
+
+    .col-closedate-active { color: #ddd; }  /* muted dash in active table */
+
+    .closed-section { opacity: 0.6; }
+    .closed-section table { background: #fafbfc; }
+    .closed-section tbody tr { background: #fafbfc; }
+    .closed-section tbody tr:hover td { background: #f3f4f8; }
+
+    .empty-row td { color: #ccc; font-style: italic; text-align: center; padding: 18px; }
+
+    .col-case      { width: 110px; font-family: monospace; font-size: 0.75rem; color: #555; }
+    .col-brand     { width: 100px; }
+    .col-asin      { width: 130px; }
+    .col-issue     { min-width: 140px; }
+    .col-status    { min-width: 200px; }
+    .col-date      { width: 90px; white-space: nowrap; color: #888; font-size: 0.75rem; }
+    .col-closedate { width: 90px; white-space: nowrap; font-size: 0.75rem; }
+    .col-num       { width: 60px; text-align: center; }
+    .col-owner     { width: 110px; }
+    .col-due       { width: 90px; white-space: nowrap; }
+    .col-action    { min-width: 140px; }
+  </style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══════════════════════════════════════════════════════════════ -->
+<header>
+  <div>
+    <h1>Amazon Cases Tracker</h1>
+    <div class="meta">Last updated: 2026-02-17 &nbsp;·&nbsp; Source: Amazon/Cases/cases_core.md</div>
+  </div>
+  <div class="header-actions">
+    <button class="btn-copy" onclick="copyAssignments(this)" title="Copy current owner assignments and close flags as JSON to paste to Claude">
+      &#128203; Copy Assignments
+    </button>
+  </div>
+</header>
+
+<!-- ═══ DATA ══════════════════════════════════════════════════════════════════ -->
+<script>
+const CASES = [
+  {
+    case_id: '12139919272', brand: 'QSTA', marketplace: 'FR',
+    asin: 'B0BH37FCZQ', asin_name: 'BRNR21-DE-FR-IT',
+    issue_type: 'FBA Stock Investigation',
+    status_bucket: 'Waiting on Us',
+    days_open: 1, msgs: 2, close: false, closed_date: null, owner: 'Vitali'
+  },
+  {
+    case_id: '12122795542', brand: 'QSTA', marketplace: 'IT',
+    asin: 'B0BC4FT3XP', asin_name: 'CUT',
+    issue_type: 'Restricted Products Appeal',
+    status_bucket: 'Waiting on Amazon',
+    days_open: 5, msgs: 2, close: false, closed_date: null, owner: 'Vitali'
+  },
+  {
+    case_id: '12139373442', brand: 'QSTA', marketplace: 'IT',
+    asin: 'B0GMYGR5Z9', asin_name: 'LAX-2-BUNDLE-IT',
+    issue_type: 'Restricted Products Appeal',
+    status_bucket: 'In Progress',
+    days_open: 1, msgs: 2, close: false, closed_date: null, owner: 'Vitali'
+  },
+  {
+    case_id: '12014653392', brand: 'QSTA', marketplace: 'UK',
+    asin: null, asin_name: null,
+    issue_type: 'VAT Invoice Reissue',
+    status_bucket: 'Resolved',
+    days_open: 2, msgs: 1, close: true, closed_date: '2026-02-17', owner: 'Vitali'
+  }
+];
+
+const openCases   = CASES.filter(c => !c.close);
+const closedCases = CASES.filter(c => c.close);
+const avgDaysOpen = openCases.length
+  ? Math.round(openCases.reduce((s, c) => s + c.days_open, 0) / openCases.length)
+  : 0;
+const totalMsgs = CASES.reduce((s, c) => s + c.msgs, 0);
+</script>
+
+<!-- ═══ STAT CARDS ════════════════════════════════════════════════════════════ -->
+<h2>Overview</h2>
+<div class="stats-row">
+  <div class="stat-card stat-open">
+    <div class="stat-label">Open Cases</div>
+    <div class="stat-value" id="stat-open">—</div>
+    <div class="stat-sub">active right now</div>
+  </div>
+  <div class="stat-card stat-closed">
+    <div class="stat-label">Closed Cases</div>
+    <div class="stat-value" id="stat-closed">—</div>
+    <div class="stat-sub">resolved</div>
+  </div>
+  <div class="stat-card stat-days">
+    <div class="stat-label">Avg Days Open</div>
+    <div class="stat-value" id="stat-days">—</div>
+    <div class="stat-sub">active cases only</div>
+  </div>
+  <div class="stat-card stat-msgs">
+    <div class="stat-label">Total Amazon Msgs</div>
+    <div class="stat-value" id="stat-msgs">—</div>
+    <div class="stat-sub">across all cases</div>
+  </div>
+</div>
+<script>
+  document.getElementById('stat-open').textContent   = openCases.length;
+  document.getElementById('stat-closed').textContent = closedCases.length;
+  document.getElementById('stat-days').textContent   = avgDaysOpen;
+  document.getElementById('stat-msgs').textContent   = totalMsgs;
+</script>
+
+<!-- ═══ CHARTS ════════════════════════════════════════════════════════════════ -->
+<h2>Charts</h2>
+<div class="charts-grid">
+  <div class="chart-card">
+    <div class="chart-title">Cases by Marketplace</div>
+    <div class="chart-wrap"><canvas id="chart-marketplace"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Cases by Brand</div>
+    <div class="chart-wrap"><canvas id="chart-brand"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Cases by Issue Type</div>
+    <div class="chart-wrap"><canvas id="chart-issue"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Status Bucket (Open Cases)</div>
+    <div class="chart-wrap"><canvas id="chart-status"></canvas></div>
+  </div>
+</div>
+
+<script>
+  Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  Chart.defaults.font.size   = 11;
+  Chart.defaults.color       = '#888';
+
+  function groupBy(key) {
+    const map = {};
+    CASES.forEach(c => {
+      const k = c[key] || 'Unknown';
+      if (!map[k]) map[k] = { open: 0, closed: 0 };
+      if (c.close) map[k].closed++;
+      else         map[k].open++;
+    });
+    return Object.entries(map).sort((a, b) => (b[1].open + b[1].closed) - (a[1].open + a[1].closed));
+  }
+
+  function makeStackedBar(canvasId, entries) {
+    new Chart(document.getElementById(canvasId), {
+      type: 'bar',
+      data: {
+        labels: entries.map(([k]) => k),
+        datasets: [
+          { label: 'Open',   data: entries.map(([, v]) => v.open),   backgroundColor: '#e05252', borderRadius: { topLeft: 0, topRight: 0, bottomLeft: 3, bottomRight: 3 }, stack: 'cases' },
+          { label: 'Closed', data: entries.map(([, v]) => v.closed), backgroundColor: '#52c97c', borderRadius: { topLeft: 3, topRight: 3, bottomLeft: 0, bottomRight: 0 }, stack: 'cases' }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top', align: 'end', labels: { boxWidth: 10, padding: 10 } },
+          tooltip: { callbacks: { footer: items => `Total: ${items.reduce((s, i) => s + i.parsed.y, 0)}` } }
+        },
+        scales: {
+          x: { grid: { display: false }, border: { display: false } },
+          y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: '#f0f1f5' }, border: { display: false } }
+        }
+      }
+    });
+  }
+
+  makeStackedBar('chart-marketplace', groupBy('marketplace'));
+  makeStackedBar('chart-brand',       groupBy('brand'));
+  makeStackedBar('chart-issue',       groupBy('issue_type'));
+
+  (function() {
+    const colors = { 'Waiting on Us': '#e05252', 'Waiting on Amazon': '#5282e0', 'In Progress': '#aaa', 'Escalated': '#e09b52', 'Resolved': '#52c97c' };
+    const map = {};
+    openCases.forEach(c => { map[c.status_bucket] = (map[c.status_bucket] || 0) + 1; });
+    const entries = Object.entries(map);
+    new Chart(document.getElementById('chart-status'), {
+      type: 'doughnut',
+      data: {
+        labels: entries.map(([k]) => k),
+        datasets: [{ data: entries.map(([, v]) => v), backgroundColor: entries.map(([k]) => colors[k] || '#ccc'), borderWidth: 2, borderColor: '#fff', hoverBorderColor: '#fff' }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, padding: 12 } } }, cutout: '65%' }
+    });
+  })();
+</script>
+
+<!-- ═══ ACTIVE CASES TABLE ════════════════════════════════════════════════════ -->
+<h2>Active Cases</h2>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th class="col-close">Close</th>
+        <th class="col-case">Case ID</th>
+        <th class="col-brand">Brand</th>
+        <th>MKT</th>
+        <th class="col-asin">ASIN / Product</th>
+        <th class="col-issue">Issue Type</th>
+        <th>Status Bucket</th>
+        <th class="col-status">Status Current</th>
+        <th class="col-date">Opened</th>
+        <th class="col-num">Days Open</th>
+        <th class="col-closedate">Closed</th>
+        <th class="col-date">Last Update</th>
+        <th class="col-num">Msgs</th>
+        <th class="col-owner">Owner</th>
+        <th class="col-due">Next Action Due</th>
+        <th class="col-action">Next Action</th>
+      </tr>
+    </thead>
+    <tbody id="active-tbody">
+
+      <!-- 12139919272 -->
+      <tr data-case="12139919272" data-closedate="">
+        <td class="col-close"><input type="checkbox" class="close-check" data-case="12139919272" data-source="false" onchange="closeToggled(this)"></td>
+        <td class="col-case">12139919272</td>
+        <td>QSTA</td>
+        <td><span class="badge mkt-fr">FR</span></td>
+        <td class="col-asin"><span class="asin-code">B0BH37FCZQ</span><span class="asin-name">BRNR21-DE-FR-IT</span></td>
+        <td class="col-issue">FBA Stock Investigation</td>
+        <td><span class="bucket bucket-us">Waiting on Us</span></td>
+        <td class="col-status">&#9888;&#65039; Mislabeled units found — provide correct ASIN or units go Unfulfillable</td>
+        <td class="col-date">2026-02-16</td>
+        <td class="col-num days-ok">1</td>
+        <td class="col-closedate col-closedate-active">—</td>
+        <td class="col-date">2026-02-17</td>
+        <td class="col-num">2</td>
+        <td class="col-owner">
+          <select class="owner-select" data-case="12139919272" data-source="Vitali" onchange="ownerChanged(this)">
+            <option value="Unassigned">Unassigned</option>
+            <option value="Tom">Tom</option>
+            <option value="Vitali">Vitali</option>
+          </select>
+        </td>
+        <td class="col-due due-urgent">2026-02-19</td>
+        <td class="col-action">Provide correct ASIN for mislabeled units</td>
+      </tr>
+
+
+      <!-- 12122795542 -->
+      <tr data-case="12122795542" data-closedate="">
+        <td class="col-close"><input type="checkbox" class="close-check" data-case="12122795542" data-source="false" onchange="closeToggled(this)"></td>
+        <td class="col-case">12122795542</td>
+        <td>QSTA</td>
+        <td><span class="badge mkt-it">IT</span></td>
+        <td class="col-asin"><span class="asin-code">B0BC4FT3XP</span><span class="asin-name">CUT</span></td>
+        <td class="col-issue">Restricted Products Appeal</td>
+        <td><span class="bucket bucket-amz">Waiting on Amazon</span></td>
+        <td class="col-status">Awaiting Policy team update</td>
+        <td class="col-date">2026-02-12</td>
+        <td class="col-num days-warn">5</td>
+        <td class="col-closedate col-closedate-active">—</td>
+        <td class="col-date">2026-02-16</td>
+        <td class="col-num">2</td>
+        <td class="col-owner">
+          <select class="owner-select" data-case="12122795542" data-source="Vitali" onchange="ownerChanged(this)">
+            <option value="Unassigned">Unassigned</option>
+            <option value="Tom">Tom</option>
+            <option value="Vitali">Vitali</option>
+          </select>
+        </td>
+        <td class="col-due due-blank">—</td>
+        <td class="col-action">—</td>
+      </tr>
+
+      <!-- 12139373442 -->
+      <tr data-case="12139373442" data-closedate="">
+        <td class="col-close"><input type="checkbox" class="close-check" data-case="12139373442" data-source="false" onchange="closeToggled(this)"></td>
+        <td class="col-case">12139373442</td>
+        <td>QSTA</td>
+        <td><span class="badge mkt-it">IT</span></td>
+        <td class="col-asin"><span class="asin-code">B0GMYGR5Z9</span><span class="asin-name">LAX-2-BUNDLE-IT</span></td>
+        <td class="col-issue">Restricted Products Appeal</td>
+        <td><span class="bucket bucket-ip">In Progress</span></td>
+        <td class="col-status">&#10003; Reinstatement process started</td>
+        <td class="col-date">2026-02-16</td>
+        <td class="col-num days-ok">1</td>
+        <td class="col-closedate col-closedate-active">—</td>
+        <td class="col-date">2026-02-16</td>
+        <td class="col-num">2</td>
+        <td class="col-owner">
+          <select class="owner-select" data-case="12139373442" data-source="Vitali" onchange="ownerChanged(this)">
+            <option value="Unassigned">Unassigned</option>
+            <option value="Tom">Tom</option>
+            <option value="Vitali">Vitali</option>
+          </select>
+        </td>
+        <td class="col-due due-blank">—</td>
+        <td class="col-action">—</td>
+      </tr>
+
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══ CLOSED CASES TABLE ════════════════════════════════════════════════════ -->
+<h2>Closed Cases</h2>
+<div class="table-wrap closed-section">
+  <table>
+    <thead>
+      <tr>
+        <th class="col-close">Reopen</th>
+        <th class="col-case">Case ID</th>
+        <th class="col-brand">Brand</th>
+        <th>MKT</th>
+        <th class="col-asin">ASIN / Product</th>
+        <th class="col-issue">Issue Type</th>
+        <th>Status Bucket</th>
+        <th class="col-status">Status Current</th>
+        <th class="col-date">Opened</th>
+        <th class="col-num">Days Open</th>
+        <th class="col-closedate">Closed</th>
+        <th class="col-date">Last Update</th>
+        <th class="col-num">Msgs</th>
+        <th class="col-owner">Owner</th>
+        <th class="col-due">Next Action Due</th>
+        <th class="col-action">Next Action</th>
+      </tr>
+    </thead>
+    <tbody id="closed-tbody">
+      <tr class="empty-row" id="closed-empty" style="display:none"><td colspan="16">No closed cases yet</td></tr>
+
+      <!-- 12014653392 — closed 2026-02-17 -->
+      <tr data-case="12014653392" data-closedate="2026-02-17">
+        <td class="col-close"><input type="checkbox" class="close-check" data-case="12014653392" data-source="true" onchange="closeToggled(this)" checked></td>
+        <td class="col-case">12014653392</td>
+        <td>QSTA</td>
+        <td><span class="badge mkt-uk">UK</span></td>
+        <td class="col-asin"><span class="asin-code">—</span></td>
+        <td class="col-issue">VAT Invoice Reissue</td>
+        <td><span class="bucket bucket-res">Resolved</span></td>
+        <td class="col-status">Still investigating</td>
+        <td class="col-date">2026-02-15</td>
+        <td class="col-num days-ok">2</td>
+        <td class="col-closedate">2026-02-17</td>
+        <td class="col-date">2026-02-15</td>
+        <td class="col-num">1</td>
+        <td class="col-owner">
+          <select class="owner-select" data-case="12014653392" data-source="Vitali" onchange="ownerChanged(this)">
+            <option value="Unassigned">Unassigned</option>
+            <option value="Tom">Tom</option>
+            <option value="Vitali">Vitali</option>
+          </select>
+        </td>
+        <td class="col-due due-blank">—</td>
+        <td class="col-action">—</td>
+      </tr>
+
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══ TRACKER LOGIC ═════════════════════════════════════════════════════════ -->
+<script>
+  const OWNER_KEY     = 'amazon_case_owners';
+  const CLOSE_KEY     = 'amazon_case_closed';
+  const CLOSEDATE_KEY = 'amazon_case_close_dates';
+
+  function loadOwners()     { try { return JSON.parse(localStorage.getItem(OWNER_KEY)     || '{}'); } catch { return {}; } }
+  function loadClosed()     { try { return JSON.parse(localStorage.getItem(CLOSE_KEY)     || '[]'); } catch { return []; } }
+  function loadCloseDates() { try { return JSON.parse(localStorage.getItem(CLOSEDATE_KEY) || '{}'); } catch { return {}; } }
+
+  function today() {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  // ── Init ─────────────────────────────────────────────────────────────────
+  (function init() {
+    const savedOwners = loadOwners();
+    const closedList  = loadClosed();
+
+    document.querySelectorAll('.owner-select').forEach(sel => {
+      sel.value = savedOwners[sel.dataset.case] ?? sel.dataset.source;
+      applyOwnerStyle(sel);
+    });
+
+    document.querySelectorAll('.close-check').forEach(cb => {
+      const isClosed = closedList.includes(cb.dataset.case) || cb.dataset.source === 'true';
+      if (isClosed) { cb.checked = true; moveRow(cb.dataset.case, true); }
+    });
+  })();
+
+  // ── Owner ─────────────────────────────────────────────────────────────────
+  function ownerChanged(sel) {
+    const saved = loadOwners();
+    saved[sel.dataset.case] = sel.value;
+    localStorage.setItem(OWNER_KEY, JSON.stringify(saved));
+    applyOwnerStyle(sel);
+  }
+  function applyOwnerStyle(sel) { sel.classList.toggle('unassigned', sel.value === 'Unassigned'); }
+
+  // ── Close ─────────────────────────────────────────────────────────────────
+  function closeToggled(cb) {
+    const caseId = cb.dataset.case;
+    const list   = loadClosed();
+    const dates  = loadCloseDates();
+
+    if (cb.checked) {
+      if (!list.includes(caseId)) list.push(caseId);
+      // Stamp close date only once — don't overwrite if already set from cases_core.md
+      if (!dates[caseId]) {
+        const row = document.querySelector(`tr[data-case="${caseId}"]`);
+        dates[caseId] = (row && row.dataset.closedate) || today();
+        localStorage.setItem(CLOSEDATE_KEY, JSON.stringify(dates));
+      }
+    } else {
+      const i = list.indexOf(caseId);
+      if (i > -1) list.splice(i, 1);
+      // Keep close date in localStorage — it stays as historical record
+    }
+
+    localStorage.setItem(CLOSE_KEY, JSON.stringify(list));
+    moveRow(caseId, cb.checked);
+  }
+
+  function moveRow(caseId, toClose) {
+    const row = document.querySelector(`tr[data-case="${caseId}"]`);
+    if (!row) return;
+    const activeTbody = document.getElementById('active-tbody');
+    const closedTbody = document.getElementById('closed-tbody');
+    const emptyRow    = document.getElementById('closed-empty');
+    const dateTd      = row.querySelector('.col-closedate');
+
+    if (toClose) {
+      // Fill close date cell
+      if (dateTd) {
+        const dates = loadCloseDates();
+        const date  = (row.dataset.closedate) || dates[caseId] || today();
+        dateTd.textContent = date;
+        dateTd.classList.remove('col-closedate-active');
+      }
+      closedTbody.appendChild(row);
+      if (emptyRow) emptyRow.style.display = 'none';
+    } else {
+      // Clear close date cell when reopening
+      if (dateTd) {
+        dateTd.textContent = '—';
+        dateTd.classList.add('col-closedate-active');
+      }
+      activeTbody.appendChild(row);
+      const remaining = closedTbody.querySelectorAll('tr:not(#closed-empty)').length;
+      if (remaining === 0 && emptyRow) emptyRow.style.display = '';
+    }
+  }
+
+  // ── Copy Assignments ──────────────────────────────────────────────────────
+  function copyAssignments(btn) {
+    const savedOwners = loadOwners();
+    const closedList  = loadClosed();
+    const closeDates  = loadCloseDates();
+
+    const owners = {};
+    document.querySelectorAll('.owner-select').forEach(sel => {
+      owners[sel.dataset.case] = savedOwners[sel.dataset.case] ?? sel.dataset.source;
+    });
+
+    const toClose = [];
+    const toCloseDates = {};
+    document.querySelectorAll('.close-check').forEach(cb => {
+      const isClosed = closedList.includes(cb.dataset.case) || cb.dataset.source === 'true';
+      if (isClosed) {
+        toClose.push(cb.dataset.case);
+        const row  = document.querySelector(`tr[data-case="${cb.dataset.case}"]`);
+        const date = (row && row.dataset.closedate) || closeDates[cb.dataset.case] || null;
+        if (date) toCloseDates[cb.dataset.case] = date;
+      }
+    });
+
+    const output = { owners, close: toClose, close_dates: toCloseDates };
+    const text = `Case assignments:\n${JSON.stringify(output, null, 2)}`;
+
+    navigator.clipboard.writeText(text).then(() => {
+      btn.classList.add('copied');
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '&#128203; Copy Assignments'; }, 2000);
+    });
+  }
+</script>
+
+</body>
+</html>

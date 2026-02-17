@@ -87,6 +87,12 @@
       letter-spacing: 0.06em;
       margin-bottom: 14px;
     }
+    .chart-sub {
+      font-size: 0.68rem;
+      color: #bbb;
+      margin-top: -10px;
+      margin-bottom: 12px;
+    }
     .chart-wrap { position: relative; height: 220px; }
 
     /* ── Tables ──────────────────────────────────────────────────────────── */
@@ -218,31 +224,37 @@ const CASES = [
     asin: 'B0BH37FCZQ', asin_name: 'BRNR21-DE-FR-IT',
     issue_type: 'FBA Stock Investigation',
     status_bucket: 'Waiting on Us',
-    days_open: 1, msgs: 2, close: false, closed_date: null, owner: 'Vitali'
+    days_open: 1, msgs: 2, close: false, closed_date: null,
+    opened_date: '2026-02-16', owner: 'Vitali', outcome: null
   },
   {
     case_id: '12122795542', brand: 'QSTA', marketplace: 'IT',
     asin: 'B0BC4FT3XP', asin_name: 'CUT',
     issue_type: 'Restricted Products Appeal',
     status_bucket: 'Waiting on Amazon',
-    days_open: 5, msgs: 2, close: false, closed_date: null, owner: 'Vitali'
+    days_open: 5, msgs: 2, close: false, closed_date: null,
+    opened_date: '2026-02-12', owner: 'Vitali', outcome: null
   },
   {
     case_id: '12139373442', brand: 'QSTA', marketplace: 'IT',
     asin: 'B0GMYGR5Z9', asin_name: 'LAX-2-BUNDLE-IT',
     issue_type: 'Restricted Products Appeal',
     status_bucket: 'In Progress',
-    days_open: 1, msgs: 2, close: false, closed_date: null, owner: 'Vitali'
+    days_open: 1, msgs: 2, close: false, closed_date: null,
+    opened_date: '2026-02-16', owner: 'Vitali', outcome: null
   },
   {
     case_id: '12014653392', brand: 'QSTA', marketplace: 'UK',
     asin: null, asin_name: null,
     issue_type: 'VAT Invoice Reissue',
     status_bucket: 'Resolved',
-    days_open: 2, msgs: 1, close: true, closed_date: '2026-02-17', owner: 'Vitali'
+    days_open: 2, msgs: 1, close: true, closed_date: '2026-02-17',
+    opened_date: '2026-02-15', owner: 'Vitali', outcome: null
   }
 ];
 
+// Derived fields
+CASES.forEach(c => { c.product = c.asin_name || c.asin || '—'; });
 const openCases   = CASES.filter(c => !c.close);
 const closedCases = CASES.filter(c => c.close);
 const avgDaysOpen = openCases.length
@@ -283,84 +295,194 @@ const totalMsgs = CASES.reduce((s, c) => s + c.msgs, 0);
 </script>
 
 <!-- ═══ CHARTS ════════════════════════════════════════════════════════════════ -->
-<h2>Charts</h2>
-<div class="charts-grid">
-  <div class="chart-card">
-    <div class="chart-title">Cases by Marketplace</div>
-    <div class="chart-wrap"><canvas id="chart-marketplace"></canvas></div>
-  </div>
-  <div class="chart-card">
-    <div class="chart-title">Cases by Brand</div>
-    <div class="chart-wrap"><canvas id="chart-brand"></canvas></div>
-  </div>
-  <div class="chart-card">
-    <div class="chart-title">Cases by Issue Type</div>
-    <div class="chart-wrap"><canvas id="chart-issue"></canvas></div>
-  </div>
-  <div class="chart-card">
-    <div class="chart-title">Status Bucket (Open Cases)</div>
-    <div class="chart-wrap"><canvas id="chart-status"></canvas></div>
-  </div>
-</div>
 
 <script>
   Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
   Chart.defaults.font.size   = 11;
   Chart.defaults.color       = '#888';
 
-  function groupBy(key) {
-    const map = {};
-    CASES.forEach(c => {
-      const k = c[key] || 'Unknown';
-      if (!map[k]) map[k] = { open: 0, closed: 0 };
-      if (c.close) map[k].closed++;
-      else         map[k].open++;
-    });
-    return Object.entries(map).sort((a, b) => (b[1].open + b[1].closed) - (a[1].open + a[1].closed));
-  }
+  const PAL = ['#e05252','#5282e0','#52c97c','#e09b52','#aa52e0','#52c9c9','#e0527c','#7ce052','#c9a052','#5252e0'];
 
-  function makeStackedBar(canvasId, entries) {
+  // Generic: stacked bar from subset, grouped by groupKey over primaryKey
+  function makeGroupedBar(canvasId, subset, primaryKey, groupKey, opts = {}) {
+    const primaries = [...new Set(subset.map(c => c[primaryKey] || 'Unknown'))];
+    const groups    = [...new Set(subset.map(c => c[groupKey] || 'Unknown'))];
+    const datasets  = groups.map((g, i) => ({
+      label: g,
+      data: primaries.map(p => subset.filter(c => (c[primaryKey]||'Unknown') === p && (c[groupKey]||'Unknown') === g).length),
+      backgroundColor: PAL[i % PAL.length],
+      borderRadius: 3,
+      stack: 'stack'
+    }));
+    const axis = opts.horizontal ? 'y' : 'x';
     new Chart(document.getElementById(canvasId), {
       type: 'bar',
-      data: {
-        labels: entries.map(([k]) => k),
-        datasets: [
-          { label: 'Open',   data: entries.map(([, v]) => v.open),   backgroundColor: '#e05252', borderRadius: { topLeft: 0, topRight: 0, bottomLeft: 3, bottomRight: 3 }, stack: 'cases' },
-          { label: 'Closed', data: entries.map(([, v]) => v.closed), backgroundColor: '#52c97c', borderRadius: { topLeft: 3, topRight: 3, bottomLeft: 0, bottomRight: 0 }, stack: 'cases' }
-        ]
-      },
+      data: { labels: primaries, datasets },
       options: {
+        indexAxis: opts.horizontal ? 'y' : 'x',
         responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'top', align: 'end', labels: { boxWidth: 10, padding: 10 } },
-          tooltip: { callbacks: { footer: items => `Total: ${items.reduce((s, i) => s + i.parsed.y, 0)}` } }
-        },
+        plugins: { legend: { position: 'top', align: 'end', labels: { boxWidth: 10, padding: 10, font: { size: 10 } } } },
         scales: {
-          x: { grid: { display: false }, border: { display: false } },
-          y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: '#f0f1f5' }, border: { display: false } }
+          x: { stacked: true, grid: { display: axis==='x' }, border: { display: false }, ticks: opts.horizontal ? { stepSize: 1, precision: 0 } : {} },
+          y: { stacked: true, beginAtZero: true, grid: { color: '#f0f1f5', display: axis==='y' }, border: { display: false }, ticks: !opts.horizontal ? { stepSize: 1, precision: 0 } : {} }
         }
       }
     });
   }
 
-  makeStackedBar('chart-marketplace', groupBy('marketplace'));
-  makeStackedBar('chart-brand',       groupBy('brand'));
-  makeStackedBar('chart-issue',       groupBy('issue_type'));
-
-  (function() {
-    const colors = { 'Waiting on Us': '#e05252', 'Waiting on Amazon': '#5282e0', 'In Progress': '#aaa', 'Escalated': '#e09b52', 'Resolved': '#52c97c' };
+  // Simple bar chart (one dataset)
+  function makeSimpleBar(canvasId, subset, key, color, opts = {}) {
     const map = {};
-    openCases.forEach(c => { map[c.status_bucket] = (map[c.status_bucket] || 0) + 1; });
+    subset.forEach(c => { const k = c[key] || 'Unknown'; map[k] = (map[k]||0) + 1; });
+    const entries = Object.entries(map).sort((a,b) => b[1] - a[1]);
+    new Chart(document.getElementById(canvasId), {
+      type: 'bar',
+      data: {
+        labels: entries.map(([k]) => k),
+        datasets: [{ data: entries.map(([,v]) => v), backgroundColor: color, borderRadius: 3 }]
+      },
+      options: {
+        indexAxis: opts.horizontal ? 'y' : 'x',
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: opts.horizontal }, border: { display: false }, ticks: opts.horizontal ? { stepSize: 1, precision: 0 } : {} },
+          y: { beginAtZero: true, grid: { color: '#f0f1f5', display: !opts.horizontal }, border: { display: false }, ticks: !opts.horizontal ? { stepSize: 1, precision: 0 } : {} }
+        }
+      }
+    });
+  }
+
+  // Doughnut
+  function makeDoughnut(canvasId, subset, key, colorMap) {
+    const map = {};
+    subset.forEach(c => { const k = c[key] || 'Unknown'; map[k] = (map[k]||0) + 1; });
     const entries = Object.entries(map);
-    new Chart(document.getElementById('chart-status'), {
+    new Chart(document.getElementById(canvasId), {
       type: 'doughnut',
       data: {
         labels: entries.map(([k]) => k),
-        datasets: [{ data: entries.map(([, v]) => v), backgroundColor: entries.map(([k]) => colors[k] || '#ccc'), borderWidth: 2, borderColor: '#fff', hoverBorderColor: '#fff' }]
+        datasets: [{ data: entries.map(([,v]) => v), backgroundColor: entries.map(([k],i) => (colorMap && colorMap[k]) || PAL[i % PAL.length]), borderWidth: 2, borderColor: '#fff' }]
       },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, padding: 12 } } }, cutout: '65%' }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, padding: 10, font: { size: 10 } } } }, cutout: '60%' }
+    });
+  }
+</script>
+
+<!-- Section: Team & Workload -->
+<h2>Team &amp; Workload</h2>
+<div class="charts-grid">
+  <div class="chart-card">
+    <div class="chart-title">Total Cases by Assignee</div>
+    <div class="chart-sub">All cases per team member</div>
+    <div class="chart-wrap"><canvas id="ch-assignee-total"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Open Cases by Assignee</div>
+    <div class="chart-sub">Currently active per person</div>
+    <div class="chart-wrap"><canvas id="ch-assignee-open"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Workload by Status</div>
+    <div class="chart-sub">All cases by status bucket</div>
+    <div class="chart-wrap"><canvas id="ch-workload-status"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Cases Created Daily</div>
+    <div class="chart-sub">New cases by opened date</div>
+    <div class="chart-wrap"><canvas id="ch-daily"></canvas></div>
+  </div>
+</div>
+<script>
+  makeSimpleBar('ch-assignee-total', CASES,     'owner', '#5282e0');
+  makeSimpleBar('ch-assignee-open',  openCases, 'owner', '#e05252');
+  makeDoughnut('ch-workload-status', CASES, 'status_bucket', {
+    'Waiting on Us': '#e05252', 'Waiting on Amazon': '#5282e0',
+    'In Progress': '#aaa', 'Escalated': '#e09b52', 'Resolved': '#52c97c'
+  });
+  // Daily cases — bar by date
+  (function() {
+    const map = {};
+    CASES.forEach(c => { if(c.opened_date) map[c.opened_date] = (map[c.opened_date]||0)+1; });
+    const sorted = Object.entries(map).sort((a,b) => a[0].localeCompare(b[0]));
+    new Chart(document.getElementById('ch-daily'), {
+      type: 'bar',
+      data: {
+        labels: sorted.map(([d]) => d),
+        datasets: [{ data: sorted.map(([,v]) => v), backgroundColor: '#5282e0', borderRadius: 3 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, border: { display: false } },
+          y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: '#f0f1f5' }, border: { display: false } }
+        }
+      }
     });
   })();
+</script>
+
+<!-- Section: Marketplace & Brand -->
+<h2>Marketplace &amp; Brand</h2>
+<div class="charts-grid">
+  <div class="chart-card">
+    <div class="chart-title">Cases per Marketplace (by Brand)</div>
+    <div class="chart-sub">Grouped by brand per marketplace</div>
+    <div class="chart-wrap"><canvas id="ch-mkt-brand"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Cases per Brand (by Marketplace)</div>
+    <div class="chart-sub">Grouped by marketplace per brand</div>
+    <div class="chart-wrap"><canvas id="ch-brand-mkt"></canvas></div>
+  </div>
+</div>
+<script>
+  makeGroupedBar('ch-mkt-brand', CASES, 'marketplace', 'brand');
+  makeGroupedBar('ch-brand-mkt', CASES, 'brand', 'marketplace');
+</script>
+
+<!-- Section: Case Types & Products -->
+<h2>Case Types &amp; Products</h2>
+<div class="charts-grid">
+  <div class="chart-card">
+    <div class="chart-title">Cases per Case Type</div>
+    <div class="chart-sub">Distribution by issue type</div>
+    <div class="chart-wrap"><canvas id="ch-casetype"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Cases per Product (by Case Type)</div>
+    <div class="chart-sub">Per product, grouped by issue type</div>
+    <div class="chart-wrap"><canvas id="ch-product-type"></canvas></div>
+  </div>
+</div>
+<script>
+  makeSimpleBar('ch-casetype', CASES, 'issue_type', '#aa52e0');
+  makeGroupedBar('ch-product-type', CASES, 'product', 'issue_type', { horizontal: true });
+</script>
+
+<!-- Section: Closed Cases Analysis -->
+<h2>Closed Cases Analysis</h2>
+<div class="charts-grid">
+  <div class="chart-card">
+    <div class="chart-title">Closed per Marketplace (by Case Type)</div>
+    <div class="chart-sub">Closed cases split by issue type</div>
+    <div class="chart-wrap"><canvas id="ch-closed-mkt-type"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Closed per Marketplace (by Outcome)</div>
+    <div class="chart-sub">Awaiting outcome column — add to cases_core.md</div>
+    <div class="chart-wrap" style="display:flex;align-items:center;justify-content:center;">
+      <div style="color:#ccc;font-size:0.82rem;font-style:italic;">No outcome data yet — add <code>outcome</code> column to enable</div>
+    </div>
+  </div>
+</div>
+<script>
+  if (closedCases.length > 0) {
+    makeGroupedBar('ch-closed-mkt-type', closedCases, 'marketplace', 'issue_type');
+  } else {
+    document.getElementById('ch-closed-mkt-type').parentElement.innerHTML = '<div style="color:#ccc;font-size:0.82rem;font-style:italic;display:flex;align-items:center;justify-content:center;height:100%;">No closed cases yet</div>';
+  }
 </script>
 
 <!-- ═══ ACTIVE CASES TABLE ════════════════════════════════════════════════════ -->

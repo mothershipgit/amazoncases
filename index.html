@@ -207,7 +207,7 @@
 <header>
   <div>
     <h1>Amazon Cases Tracker</h1>
-    <div class="meta">Last updated: 2026-02-17 &nbsp;·&nbsp; Source: Amazon/Cases/cases_core.md</div>
+    <div class="meta">Last updated: 2026-03-03 &nbsp;·&nbsp; Source: projects/Amazon Cases/cases_core.md</div>
   </div>
   <div class="header-actions">
     <button class="btn-copy" onclick="copyAssignments(this)" title="Copy current owner assignments and close flags as JSON to paste to Claude">
@@ -223,8 +223,8 @@ const CASES = [
     case_id: '12139919272', brand: 'QSTA', marketplace: 'FR',
     asin: 'B0BH37FCZQ', asin_name: 'BRNR21-DE-FR-IT',
     issue_type: 'FBA Stock Investigation',
-    status_bucket: 'Waiting on Us',
-    days_open: 1, msgs: 2, close: false, closed_date: null,
+    status_bucket: 'Waiting on Amazon',
+    days_open: 15, msgs: 6, close: false, closed_date: null,
     opened_date: '2026-02-16', owner: 'Vitali', outcome: null
   },
   {
@@ -232,7 +232,7 @@ const CASES = [
     asin: 'B0BC4FT3XP', asin_name: 'CUT',
     issue_type: 'Restricted Products Appeal',
     status_bucket: 'Waiting on Amazon',
-    days_open: 5, msgs: 2, close: false, closed_date: null,
+    days_open: 19, msgs: 7, close: false, closed_date: null,
     opened_date: '2026-02-12', owner: 'Vitali', outcome: null
   },
   {
@@ -240,15 +240,71 @@ const CASES = [
     asin: 'B0GMYGR5Z9', asin_name: 'LAX-2-BUNDLE-IT',
     issue_type: 'Restricted Products Appeal',
     status_bucket: 'In Progress',
-    days_open: 1, msgs: 2, close: false, closed_date: null,
+    days_open: 15, msgs: 2, close: false, closed_date: null,
     opened_date: '2026-02-16', owner: 'Vitali', outcome: null
+  },
+  {
+    case_id: '12122998082', brand: 'QSTA', marketplace: 'IT',
+    asin: 'B0BC4FT3XP', asin_name: 'CUT',
+    issue_type: 'Restricted Products Appeal',
+    status_bucket: 'Waiting on Us',
+    days_open: 14, msgs: 1, close: false, closed_date: null,
+    opened_date: '2026-02-17', owner: 'Unassigned', outcome: null
+  },
+  {
+    case_id: '10995838672', brand: 'QSTA', marketplace: 'UK',
+    asin: 'B0BM1WPXC5', asin_name: 'LAX',
+    issue_type: 'VIP Seller Relations',
+    status_bucket: 'Waiting on Amazon',
+    days_open: 13, msgs: 14, close: false, closed_date: null,
+    opened_date: '2026-02-18', owner: 'Unassigned', outcome: null
+  },
+  {
+    case_id: '11756757402', brand: 'TCU', marketplace: 'UK',
+    asin: null, asin_name: null,
+    issue_type: 'Country of Origin Compliance',
+    status_bucket: 'Waiting on Us',
+    days_open: 12, msgs: 1, close: false, closed_date: null,
+    opened_date: '2026-02-19', owner: 'Unassigned', outcome: null
+  },
+  {
+    case_id: '12150140992', brand: 'QSTA', marketplace: 'ES',
+    asin: 'B0BC4FT3XP', asin_name: 'CUT',
+    issue_type: 'Image Compliance - Escalation',
+    status_bucket: 'In Progress',
+    days_open: 11, msgs: 6, close: false, closed_date: null,
+    opened_date: '2026-02-20', owner: 'Unassigned', outcome: null
+  },
+  {
+    case_id: '12160163052', brand: 'Vegan Vitality', marketplace: 'ES',
+    asin: 'B0DJTJ11PG', asin_name: 'Berberine',
+    issue_type: 'FBA Stock Investigation',
+    status_bucket: 'In Progress',
+    days_open: 8, msgs: 1, close: false, closed_date: null,
+    opened_date: '2026-02-23', owner: 'Unassigned', outcome: null
+  },
+  {
+    case_id: '12159445672', brand: 'QSTA', marketplace: 'DE',
+    asin: 'B0BM1WPXC5', asin_name: 'LAX',
+    issue_type: 'Escalation Review',
+    status_bucket: 'Escalated',
+    days_open: 8, msgs: 1, close: false, closed_date: null,
+    opened_date: '2026-02-23', owner: 'Unassigned', outcome: null
+  },
+  {
+    case_id: '12053445982', brand: 'QSTA', marketplace: 'IT',
+    asin: 'B0BC4FT3XP', asin_name: 'CUT',
+    issue_type: 'Restricted Products Appeal',
+    status_bucket: 'Resolved',
+    days_open: 4, msgs: 4, close: true, closed_date: '2026-02-25',
+    opened_date: '2026-02-21', owner: 'Unassigned', outcome: null
   },
   {
     case_id: '12014653392', brand: 'QSTA', marketplace: 'UK',
     asin: null, asin_name: null,
     issue_type: 'VAT Invoice Reissue',
     status_bucket: 'Resolved',
-    days_open: 2, msgs: 1, close: true, closed_date: '2026-02-17',
+    days_open: 2, msgs: 4, close: true, closed_date: '2026-02-17',
     opened_date: '2026-02-15', owner: 'Vitali', outcome: null
   }
 ];
@@ -519,13 +575,13 @@ const totalMsgs = CASES.reduce((s, c) => s + c.msgs, 0);
         <td><span class="badge mkt-fr">FR</span></td>
         <td class="col-asin"><span class="asin-code">B0BH37FCZQ</span><span class="asin-name">BRNR21-DE-FR-IT</span></td>
         <td class="col-issue">FBA Stock Investigation</td>
-        <td><span class="bucket bucket-us">Waiting on Us</span></td>
-        <td class="col-status">&#9888;&#65039; Mislabeled units found — provide correct ASIN or units go Unfulfillable</td>
+        <td><span class="bucket bucket-amz">Waiting on Amazon</span></td>
+        <td class="col-status">Investigation complete, corrective measures taken</td>
         <td class="col-date">2026-02-16</td>
-        <td class="col-num days-ok">1</td>
+        <td class="col-num days-urgent">15</td>
         <td class="col-closedate col-closedate-active">—</td>
-        <td class="col-date">2026-02-17</td>
-        <td class="col-num">2</td>
+        <td class="col-date">2026-02-26</td>
+        <td class="col-num">6</td>
         <td class="col-owner">
           <select class="owner-select" data-case="12139919272" data-source="Vitali" onchange="ownerChanged(this)">
             <option value="Unassigned">Unassigned</option>
@@ -536,7 +592,6 @@ const totalMsgs = CASES.reduce((s, c) => s + c.msgs, 0);
         <td class="col-due due-urgent">2026-02-19</td>
         <td class="col-action">Provide correct ASIN for mislabeled units</td>
       </tr>
-
 
       <!-- 12122795542 -->
       <tr data-case="12122795542" data-closedate="">
@@ -549,10 +604,10 @@ const totalMsgs = CASES.reduce((s, c) => s + c.msgs, 0);
         <td><span class="bucket bucket-amz">Waiting on Amazon</span></td>
         <td class="col-status">Awaiting Policy team update</td>
         <td class="col-date">2026-02-12</td>
-        <td class="col-num days-warn">5</td>
+        <td class="col-num days-urgent">19</td>
         <td class="col-closedate col-closedate-active">—</td>
-        <td class="col-date">2026-02-16</td>
-        <td class="col-num">2</td>
+        <td class="col-date">2026-03-02</td>
+        <td class="col-num">7</td>
         <td class="col-owner">
           <select class="owner-select" data-case="12122795542" data-source="Vitali" onchange="ownerChanged(this)">
             <option value="Unassigned">Unassigned</option>
@@ -573,14 +628,170 @@ const totalMsgs = CASES.reduce((s, c) => s + c.msgs, 0);
         <td class="col-asin"><span class="asin-code">B0GMYGR5Z9</span><span class="asin-name">LAX-2-BUNDLE-IT</span></td>
         <td class="col-issue">Restricted Products Appeal</td>
         <td><span class="bucket bucket-ip">In Progress</span></td>
-        <td class="col-status">&#10003; Reinstatement process started</td>
+        <td class="col-status">Reinstatement process started</td>
         <td class="col-date">2026-02-16</td>
-        <td class="col-num days-ok">1</td>
+        <td class="col-num days-urgent">15</td>
         <td class="col-closedate col-closedate-active">—</td>
         <td class="col-date">2026-02-16</td>
         <td class="col-num">2</td>
         <td class="col-owner">
           <select class="owner-select" data-case="12139373442" data-source="Vitali" onchange="ownerChanged(this)">
+            <option value="Unassigned">Unassigned</option>
+            <option value="Tom">Tom</option>
+            <option value="Vitali">Vitali</option>
+          </select>
+        </td>
+        <td class="col-due due-blank">—</td>
+        <td class="col-action">—</td>
+      </tr>
+
+      <!-- 12122998082 -->
+      <tr data-case="12122998082" data-closedate="">
+        <td class="col-close"><input type="checkbox" class="close-check" data-case="12122998082" data-source="false" onchange="closeToggled(this)"></td>
+        <td class="col-case">12122998082</td>
+        <td>QSTA</td>
+        <td><span class="badge mkt-it">IT</span></td>
+        <td class="col-asin"><span class="asin-code">B0BC4FT3XP</span><span class="asin-name">CUT</span></td>
+        <td class="col-issue">Restricted Products Appeal</td>
+        <td><span class="bucket bucket-us">Waiting on Us</span></td>
+        <td class="col-status">ASIN reinstatement rejected - new appeal required</td>
+        <td class="col-date">2026-02-17</td>
+        <td class="col-num days-urgent">14</td>
+        <td class="col-closedate col-closedate-active">—</td>
+        <td class="col-date">2026-02-17</td>
+        <td class="col-num">1</td>
+        <td class="col-owner">
+          <select class="owner-select" data-case="12122998082" data-source="Unassigned" onchange="ownerChanged(this)">
+            <option value="Unassigned">Unassigned</option>
+            <option value="Tom">Tom</option>
+            <option value="Vitali">Vitali</option>
+          </select>
+        </td>
+        <td class="col-due due-blank">—</td>
+        <td class="col-action">—</td>
+      </tr>
+
+      <!-- 10995838672 -->
+      <tr data-case="10995838672" data-closedate="">
+        <td class="col-close"><input type="checkbox" class="close-check" data-case="10995838672" data-source="false" onchange="closeToggled(this)"></td>
+        <td class="col-case">10995838672</td>
+        <td>QSTA</td>
+        <td><span class="badge mkt-uk">UK</span></td>
+        <td class="col-asin"><span class="asin-code">B0BM1WPXC5</span><span class="asin-name">LAX</span></td>
+        <td class="col-issue">VIP Seller Relations</td>
+        <td><span class="bucket bucket-amz">Waiting on Amazon</span></td>
+        <td class="col-status">Technical team investigating voucher &amp; listing issues</td>
+        <td class="col-date">2026-02-18</td>
+        <td class="col-num days-warn">13</td>
+        <td class="col-closedate col-closedate-active">—</td>
+        <td class="col-date">2026-03-03</td>
+        <td class="col-num">14</td>
+        <td class="col-owner">
+          <select class="owner-select" data-case="10995838672" data-source="Unassigned" onchange="ownerChanged(this)">
+            <option value="Unassigned">Unassigned</option>
+            <option value="Tom">Tom</option>
+            <option value="Vitali">Vitali</option>
+          </select>
+        </td>
+        <td class="col-due due-blank">—</td>
+        <td class="col-action">—</td>
+      </tr>
+
+      <!-- 11756757402 -->
+      <tr data-case="11756757402" data-closedate="">
+        <td class="col-close"><input type="checkbox" class="close-check" data-case="11756757402" data-source="false" onchange="closeToggled(this)"></td>
+        <td class="col-case">11756757402</td>
+        <td>TCU</td>
+        <td><span class="badge mkt-uk">UK</span></td>
+        <td class="col-asin"><span class="asin-code">—</span></td>
+        <td class="col-issue">Country of Origin Compliance</td>
+        <td><span class="bucket bucket-us">Waiting on Us</span></td>
+        <td class="col-status">Action required - provide COO information for listings</td>
+        <td class="col-date">2026-02-19</td>
+        <td class="col-num days-warn">12</td>
+        <td class="col-closedate col-closedate-active">—</td>
+        <td class="col-date">2026-02-19</td>
+        <td class="col-num">1</td>
+        <td class="col-owner">
+          <select class="owner-select" data-case="11756757402" data-source="Unassigned" onchange="ownerChanged(this)">
+            <option value="Unassigned">Unassigned</option>
+            <option value="Tom">Tom</option>
+            <option value="Vitali">Vitali</option>
+          </select>
+        </td>
+        <td class="col-due due-blank">—</td>
+        <td class="col-action">—</td>
+      </tr>
+
+      <!-- 12150140992 -->
+      <tr data-case="12150140992" data-closedate="">
+        <td class="col-close"><input type="checkbox" class="close-check" data-case="12150140992" data-source="false" onchange="closeToggled(this)"></td>
+        <td class="col-case">12150140992</td>
+        <td>QSTA</td>
+        <td><span class="badge mkt-es">ES</span></td>
+        <td class="col-asin"><span class="asin-code">B0BC4FT3XP</span><span class="asin-name">CUT</span></td>
+        <td class="col-issue">Image Compliance - Escalation</td>
+        <td><span class="bucket bucket-ip">In Progress</span></td>
+        <td class="col-status">Premium Support reviewing non-compliant image removal</td>
+        <td class="col-date">2026-02-20</td>
+        <td class="col-num days-warn">11</td>
+        <td class="col-closedate col-closedate-active">—</td>
+        <td class="col-date">2026-02-27</td>
+        <td class="col-num">6</td>
+        <td class="col-owner">
+          <select class="owner-select" data-case="12150140992" data-source="Unassigned" onchange="ownerChanged(this)">
+            <option value="Unassigned">Unassigned</option>
+            <option value="Tom">Tom</option>
+            <option value="Vitali">Vitali</option>
+          </select>
+        </td>
+        <td class="col-due due-blank">—</td>
+        <td class="col-action">—</td>
+      </tr>
+
+      <!-- 12160163052 -->
+      <tr data-case="12160163052" data-closedate="">
+        <td class="col-close"><input type="checkbox" class="close-check" data-case="12160163052" data-source="false" onchange="closeToggled(this)"></td>
+        <td class="col-case">12160163052</td>
+        <td>Vegan Vitality</td>
+        <td><span class="badge mkt-es">ES</span></td>
+        <td class="col-asin"><span class="asin-code">B0DJTJ11PG</span><span class="asin-name">Berberine</span></td>
+        <td class="col-issue">FBA Stock Investigation</td>
+        <td><span class="bucket bucket-ip">In Progress</span></td>
+        <td class="col-status">FBA inspection complete - no defects found, review requested</td>
+        <td class="col-date">2026-02-23</td>
+        <td class="col-num days-warn">8</td>
+        <td class="col-closedate col-closedate-active">—</td>
+        <td class="col-date">2026-02-23</td>
+        <td class="col-num">1</td>
+        <td class="col-owner">
+          <select class="owner-select" data-case="12160163052" data-source="Unassigned" onchange="ownerChanged(this)">
+            <option value="Unassigned">Unassigned</option>
+            <option value="Tom">Tom</option>
+            <option value="Vitali">Vitali</option>
+          </select>
+        </td>
+        <td class="col-due due-blank">—</td>
+        <td class="col-action">—</td>
+      </tr>
+
+      <!-- 12159445672 -->
+      <tr data-case="12159445672" data-closedate="">
+        <td class="col-close"><input type="checkbox" class="close-check" data-case="12159445672" data-source="false" onchange="closeToggled(this)"></td>
+        <td class="col-case">12159445672</td>
+        <td>QSTA</td>
+        <td><span class="badge mkt-de">DE</span></td>
+        <td class="col-asin"><span class="asin-code">B0BM1WPXC5</span><span class="asin-name">LAX</span></td>
+        <td class="col-issue">Escalation Review</td>
+        <td><span class="bucket bucket-esc">Escalated</span></td>
+        <td class="col-status">Escalated to specialist team by Premium Dept</td>
+        <td class="col-date">2026-02-23</td>
+        <td class="col-num days-warn">8</td>
+        <td class="col-closedate col-closedate-active">—</td>
+        <td class="col-date">2026-02-23</td>
+        <td class="col-num">1</td>
+        <td class="col-owner">
+          <select class="owner-select" data-case="12159445672" data-source="Unassigned" onchange="ownerChanged(this)">
             <option value="Unassigned">Unassigned</option>
             <option value="Tom">Tom</option>
             <option value="Vitali">Vitali</option>
@@ -621,6 +832,32 @@ const totalMsgs = CASES.reduce((s, c) => s + c.msgs, 0);
     <tbody id="closed-tbody">
       <tr class="empty-row" id="closed-empty" style="display:none"><td colspan="16">No closed cases yet</td></tr>
 
+      <!-- 12053445982 — closed 2026-02-25 -->
+      <tr data-case="12053445982" data-closedate="2026-02-25">
+        <td class="col-close"><input type="checkbox" class="close-check" data-case="12053445982" data-source="true" onchange="closeToggled(this)" checked></td>
+        <td class="col-case">12053445982</td>
+        <td>QSTA</td>
+        <td><span class="badge mkt-it">IT</span></td>
+        <td class="col-asin"><span class="asin-code">B0BC4FT3XP</span><span class="asin-name">CUT</span></td>
+        <td class="col-issue">Restricted Products Appeal</td>
+        <td><span class="bucket bucket-res">Resolved</span></td>
+        <td class="col-status">Auto-closed - no response received</td>
+        <td class="col-date">2026-02-21</td>
+        <td class="col-num days-ok">4</td>
+        <td class="col-closedate">2026-02-25</td>
+        <td class="col-date">2026-02-25</td>
+        <td class="col-num">4</td>
+        <td class="col-owner">
+          <select class="owner-select" data-case="12053445982" data-source="Unassigned" onchange="ownerChanged(this)">
+            <option value="Unassigned">Unassigned</option>
+            <option value="Tom">Tom</option>
+            <option value="Vitali">Vitali</option>
+          </select>
+        </td>
+        <td class="col-due due-blank">—</td>
+        <td class="col-action">—</td>
+      </tr>
+
       <!-- 12014653392 — closed 2026-02-17 -->
       <tr data-case="12014653392" data-closedate="2026-02-17">
         <td class="col-close"><input type="checkbox" class="close-check" data-case="12014653392" data-source="true" onchange="closeToggled(this)" checked></td>
@@ -630,12 +867,12 @@ const totalMsgs = CASES.reduce((s, c) => s + c.msgs, 0);
         <td class="col-asin"><span class="asin-code">—</span></td>
         <td class="col-issue">VAT Invoice Reissue</td>
         <td><span class="bucket bucket-res">Resolved</span></td>
-        <td class="col-status">Still investigating</td>
+        <td class="col-status">Amazon still investigating (manually closed)</td>
         <td class="col-date">2026-02-15</td>
         <td class="col-num days-ok">2</td>
         <td class="col-closedate">2026-02-17</td>
-        <td class="col-date">2026-02-15</td>
-        <td class="col-num">1</td>
+        <td class="col-date">2026-03-02</td>
+        <td class="col-num">4</td>
         <td class="col-owner">
           <select class="owner-select" data-case="12014653392" data-source="Vitali" onchange="ownerChanged(this)">
             <option value="Unassigned">Unassigned</option>
